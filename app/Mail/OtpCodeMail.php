@@ -34,7 +34,7 @@ class OtpCodeMail extends Mailable
     {
         return new Envelope(
             subject: 'Otp Code Mail',
-            from: new Address('accounts@unetah.net', 'gagachou'),
+            from: new Address('accounts@unetah.net', 'FlickTalk'),
         );
     }
 

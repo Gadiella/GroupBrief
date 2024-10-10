@@ -10,7 +10,7 @@ use Laravel\Sanctum\HasApiTokens;
 
 class User extends Authenticatable
 {
-    use HasApiTokens, HasFactory, Notifiable;
+    use HasApiTokens, Notifiable;
 
     /**
      * The attributes that are mass assignable.
@@ -22,6 +22,11 @@ class User extends Authenticatable
         'email',
         'password',
     ];
+// User.php (Modèle User)
+public function groupes()
+{
+    return $this->belongsToMany(Groupe::class, 'membres', 'user_id', 'groupe_id');
+}
 
     /**
      * The attributes that should be hidden for serialization.
@@ -34,12 +39,22 @@ class User extends Authenticatable
     ];
 
     /**
-     * The attributes that should be cast.
+     * Get the attributes that should be cast.
      *
-     * @var array<string, string>
+     * @return array<string, string>
      */
-    protected $casts = [
-        'email_verified_at' => 'datetime',
-       
-    ];
+    protected function casts(): array
+    {
+        return [
+            'email_verified_at' => 'datetime',
+            'password' => 'hashed',
+        ];
+    }
+
+
+    public function groups()
+{
+    return $this->belongsToMany(Groupe::class, 'groupes', 'users_id', 'groupes_id');
+}
+
 }

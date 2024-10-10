@@ -29,8 +29,8 @@ class MemberAddedConfirmation extends Mailable
     public function build()
     {
         return $this->subject('Confirmation d’ajout au groupe')
-                    ->from(new Address('accounts@unetah.net', 'gagachou'))
-                    ->view('mail.MemberAddedConfirmation') // La vue de l'email
+                    ->from(new Address('accounts@unetah.net', 'EcoCollecte'))
+                    ->view('mail.member_confirmation') // La vue de l'email
                     ->with([
                         'memberName' => $this->memberName,
                         'groupName' => $this->groupName,

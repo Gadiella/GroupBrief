@@ -10,8 +10,12 @@ use App\Models\Groupe;
 use App\Models\InvitedMembers;
 use App\Models\Membre;
 use App\Models\User;
+use App\Notifications\GroupNotification;
+use App\Notifications\NewMemberNotification;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\Notification;
 use PhpParser\Node\Stmt\TryCatch;
 
 class GroupController extends Controller
@@ -22,48 +26,177 @@ class GroupController extends Controller
         // Validation des données
         $request->validate([
             'name' => 'required|string|max:255', // nom du groupe requis
-            'description'=> 'required|string|max:255',
+            'description' => 'required|string|max:255',
         ]);
-        
+
 
         // Création du groupe
 
-       try {
-        $groupe = Groupe::create([
-            'name' => $request->name,
-            'description'=>$request->description,
-        ]);
+        try {
+            $groupe = Groupe::create([
+                'name' => $request->name,
+                'description' => $request->description,
+            ]);
 
-        return response()->json([
-            'message' => 'Groupe créé avec succès!',
-            'groupe' => $groupe
-        ], 201);
-       } catch (\Throwable $th) {
-        // return $th;
-        return response()->json(['message'=> 'erreur de creation', 500]);
-       }
-       
+            return response()->json([
+                'message' => 'Groupe créé avec succès!',
+                'groupe' => $groupe
+            ], 201);
+        } catch (\Throwable $th) {
+            // return $th;
+            return response()->json(['message' => 'erreur de creation', 500]);
+        }
 
+        // $groupe = Groupe::create($request->all());
+        // return response()->json(['message' => 'Group created successfully', 'group' => $groupe], 201);
     }
 
 
 
-      // Méthode pour récupérer la liste des groupes
-      public function index()
-      {
-          // Récupérer tous les groupes
-          $groups = Groupe::all();
-  
-          // Retourner les groupes en réponse JSON
-          return response()->json($groups, 200);
-      }
-// pour voir les ficher envoyer par chaque membre
+    // Méthode pour récupérer la liste des groupes
+
+
+
+    public function index()
+    {
+        // Récupérer tous les groupes
+        $groups = Groupe::all();
+
+        // Retourner les groupes en réponse JSON
+        return response()->json($groups, 200);
+    }
+
+
+// public function getUserGroups(Request $request)
+// {
+//     $user = $request->user(); // Récupère l'utilisateur connecté
+//     $groups = $user->groups; // Supposons que l'utilisateur a une relation avec les groupes auxquels il est membre
+    
+//     return response()->json($groups, 201);
+// }
+
+
+    // pour voir les ficher envoyer par chaque membre
     public function getGroups()
     {
         return response()->json(Groupe::with('membres', 'fichiers')->get());
     }
 
-    public function addMember(Request $request, $groupId)
+   
+    public function getUserGroups()
+{
+    $user = auth()->user();
+    $groups = $user->groups;  // Récupérer les groupes de l'utilisateur
+    return response()->json($groups);
+}
+
+   
+    
+
+    // public function addMember(Request $request, $groupId)
+    // {
+    //     // Validation des données
+    //     $request->validate([
+    //         'name' => 'required|string|max:255',
+    //         'email' => 'required|email|:membres,email',
+    //         'groupe_id' => 'required|exists:groupes,id', // Le groupe doit exister
+    //     ]);
+
+    //     // Récupérer le groupe
+    //     $group = Groupe::find($groupId);
+
+    //     if (!$group) {
+    //         return response()->json(['message' => 'Groupe introuvable.'], 404);
+    //     }
+
+    //     // Ajout du membre
+    //     $membre = Membre::create([
+    //         'name' => $request->name,
+    //         'email' => $request->email,
+    //         'groupe_id' => $group->id,
+    //     ]);
+
+    //     // Récupérer l'utilisateur qui a ajouté le membre (utilisateur actuellement connecté)
+    //     $addedBy = auth()->user();
+
+    //     // Envoi de l'email au nouveau membre
+    //     Mail::to($membre->email)->send(new MemberAddedConfirmation($request->name, $group->name));
+
+    //     // Récupérer les autres membres du groupe
+    //     $members = Membre::where('groupe_id', $group->id)->get();
+
+       
+
+    //     // Envoi de l'email de notification aux autres membres du groupe
+    //     foreach ($members as $member) {
+    //         Mail::to($member->email)->send(new GroupMemberAddedNotification($membre->name, $addedBy->name, $group->name));
+    //     }
+
+    //     return response()->json([
+    //         'message' => 'Membre ajouté avec succès au groupe!',
+    //         'membre' => $membre
+    //     ], 201);
+
+
+    // }
+
+
+
+//     public function addMember(Request $request, $groupId)
+// {
+//     // Validation des données
+//     $request->validate([
+//         'name' => 'required|string|max:255',
+//         'email' => 'required|email|:membres,email',
+//         'groupe_id' => 'required|exists:groupes,id', // Le groupe doit exister
+//     ]);
+
+//     // Récupérer le groupe
+//     $group = Groupe::find($groupId);
+
+//     if (!$group) {
+//         return response()->json(['message' => 'Groupe introuvable.'], 404);
+//     }
+
+//     // Vérifier si le membre est déjà inscrit
+//     $membre = Membre::where('email', $request->email)->first();
+
+//     if ($membre) {
+//         return response()->json(['message' => 'Ce membre est déjà inscrit.'], 400);
+//     }
+
+//     // Ajout du membre
+//     $membre = Membre::create([
+//         'name' => $request->name,
+//         'email' => $request->email,
+//         'groupe_id' => $group->id,
+//     ]);
+
+//     // Récupérer l'utilisateur qui a ajouté le membre (utilisateur actuellement connecté)
+//     $addedBy = auth()->user();
+
+//     // Envoi de l'email au nouveau membre
+//     Mail::to($membre->email)->send(new MemberAddedConfirmation($request->name, $group->name));
+
+//     // Récupérer les autres membres du groupe
+//     $members = Membre::where('groupe_id', $group->id)->get();
+
+//     // Envoi de l'email de notification aux autres membres du groupe
+//     foreach ($members as $member) {
+//         Mail::to($member->email)->send(new GroupMemberAddedNotification($membre->name, $addedBy->name, $group->name));
+//     }
+
+//     return response()->json([
+//         'message' => 'Membre ajouté avec succès au groupe!',
+//         'membre' => $membre
+//     ], 201);
+// }
+
+
+
+
+
+public function addMember(Request $request, $groupId)
     {
         // Validation des données
         $request->validate([
@@ -123,44 +256,36 @@ class GroupController extends Controller
             ], 201);
         }
     }
-    public function uploadFile(Request $request, $groupId)
-    {
-  
-        $request->validate([
-            'file_name' => 'required|file|max:10000000',
-            'groupe_id' => 'required|exists:groupes,id',
+
+
+
+public function uploadFile(Request $request, $groupId)
+{
+    $request->validate([
+        'file_name' => 'required|file|max:10000000',
+        'groupe_id' => 'required|exists:groupes,id',
+    ]);
+
+    if ($request->hasFile('file_name') && $request->file('file_name')->isValid()) {
+        $filePath = $request->file('file_name')->store('services', 'public');
+        $data['file_name'] = $filePath;
+
+        $fichier = Fichier::create([
+            'file_path' => $filePath,
+            'groupe_id' => $request->groupe_id,
         ]);
-
-        if ($request->hasFile('file_name') && $request->file('file_name')->isValid()) {
-            $filePath = $request->file('file_name')->store('services', 'public');
-            $data['file_name'] = $filePath;
-
-            $fichier = Fichier::create([
-                // 'file_name' => $request->file_name,
-                'file_path' => $filePath,
-                'groupe_id' => $request->groupe_id,
-            ]);
-        }
-
-        // Ajout du fichier
-       
-
-        return response()->json([
-            'message' => 'Fichier ajouté au groupe avec succès!',
-            'fichier' => $fichier
-        ], 201);
-
     }
-    public function listFilesByGroup($groupId)
-    {
-        $group = Groupe::with('fichiers')->find($groupId);
-    
-        if (!$group) {
-            return response()->json(['message' => 'Groupe non trouvé'], 404);
-        }
-    
-        return response()->json($group->fichiers);
-    }
-    
+
+    // Ajout de l'utilisateur qui a uploadé le fichier (si authentifié)
+    $uploadedBy = auth()->check() ? auth()->user()->name : 'Utilisateur inconnu';
+
+    return response()->json([
+        'message' => 'Fichier ajouté au groupe avec succès!',
+        'fichier' => [
+            'file_path' => $fichier->file_path,
+            'uploaded_by' => $uploadedBy,  // Retourne le nom de l'utilisateur ou 'Utilisateur inconnu'
+        ]
+    ], 201);
+}
 
 }

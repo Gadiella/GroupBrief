@@ -20,14 +20,19 @@ Route::middleware('auth:sanctum')->group(function () {
 
 
 Route::post('/groups', [GroupController::class, 'createGroup']);
-Route::get('/groups', [GroupController::class, 'getGroups']);
+Route::get('/getGroups', [GroupController::class, 'getGroups']);
 
 Route::post('/groups/{groupId}/files', [GroupController::class, 'uploadFile']);
 Route::post('/verify-code', [AuthController::class, 'verifyCode']);
 Route::get('/groups', [GroupController::class, 'index']);
 Route::get('/groups/{groupId}/files', [GroupController::class, 'listFilesByGroup']);
 Route::get('/users', [AuthController::class, 'listUsers']);
+// api.php
+Route::middleware(['auth:sanctum', 'group.access'])->group(function () {
+    Route::get('/groupes/{groupe}', [GroupController::class, 'show']);
+});
 
+Route::middleware('auth:sanctum')->get('/user-groups', [GroupController::class, 'getUserGroups']);
 
 
 
